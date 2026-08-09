@@ -102,21 +102,6 @@ curl -i http://localhost:8000/api/queries -b cookies.txt
 curl -i -X POST http://localhost:8000/api/logout -b cookies.txt
 ```
 
-### Opción C — Postman
-
-1. Crea una colección con los mismos 6 requests (mismos métodos/URLs/bodies de arriba).
-2. Postman guarda las cookies automáticamente por dominio — solo ejecútalos en orden dentro de la misma colección.
-
-### Opción D — Navegador (solo para verificar rápido)
-
-Abre `http://localhost:8000`, luego DevTools → Console:
-```js
-fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'},
-  body: JSON.stringify({email:'tu@espol.edu.ec', password:'secret123'})})
-  .then(r=>r.json()).then(console.log)
-```
-Luego navega directo a `http://localhost:8000/api/me` en ese mismo navegador — verás el JSON.
-
 ## Endpoints disponibles
 
 | Método | Ruta | Auth | Descripción |
