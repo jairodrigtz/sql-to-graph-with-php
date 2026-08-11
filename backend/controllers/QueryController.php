@@ -44,8 +44,9 @@ class QueryController {
     // Requerimiento: "Visualizar planes de ejecución analizados" (uno puntual)
     public function show(int $id): void {
         $userId = AuthController::requireAuth();
-        foreach (QueryRecord::listByUser($userId) as $r) {
-            if ((int)$r['id'] === $id) json_response(['query' => $r]);
+        $query = QueryRecord::findByIdAndUserId($id, $userId);
+        if ($query) {
+            json_response(['query' => $query]);
         }
         json_response(['error' => 'not_found', 'message' => 'Consulta no encontrada.'], 404);
     }

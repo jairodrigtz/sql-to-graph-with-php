@@ -8,7 +8,16 @@ class QueryRecord {
         $id = csv_next_id(QUERIES_CSV);
         $createdAt = date('c');
         csv_append_row(QUERIES_CSV, [$id, $userId, $query, $version, $explainJson, $explainTree, $graphUrl, $createdAt], self::HEADER);
-        return compact('id', 'userId', 'query', 'version', 'graphUrl', 'createdAt');
+        return [
+            'id' => $id,
+            'user_id' => $userId,
+            'query' => $query,
+            'version' => $version,
+            'explain_json' => $explainJson,
+            'explain_tree' => $explainTree,
+            'graph_url' => $graphUrl,
+            'created_at' => $createdAt,
+        ];
     }
 
     public static function listByUser(int $userId): array {
@@ -18,5 +27,12 @@ class QueryRecord {
         ));
         usort($rows, fn($a, $b) => strcmp($b['created_at'], $a['created_at']));
         return $rows;
+    }
+
+    public static function findByIdAndUserId(int $id, int $userId): ?array {
+        foreach (self::listByUser($userId) as $row) {
+            if ((int)$row['id'] === $id) return $row;
+        }
+        return null;
     }
 }
