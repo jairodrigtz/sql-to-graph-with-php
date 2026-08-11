@@ -34,3 +34,41 @@ function csv_next_id(string $filePath): int {
     if (empty($rows)) return 1;
     return max(array_map(fn($r) => (int)$r['id'], $rows)) + 1;
 }
+
+function csv_delete_row(string $filePath, int $id): bool {
+    if (!file_exists($filePath)) return false;
+    $fh = fopen($filePath, 'r');
+    if (!$fh) return false;
+    flock($fh, LOCK_SH);
+    $header = fgetcsv($fh, null, ',', '"', '\\');
+    $keptRows = [];
+    $found = false;
+    if ($header !== false) {
+        while (($row = fgetcsv($fh, null, ',', '"', '\\')) !== false) {
+            if (count($row) !== count($header)) continue;
+            $assoc = array_combine($header, $row);
+            if ((int)$assoc['id'] === $id) {
+                $found = true;
+                continue;
+            }
+            $keptRows[] = $row;
+        }
+    }
+    flock($fh, LOCK_UN);
+    fclose($fh);
+
+    if (!$found) return false;
+
+    $tmpPath = $filePath . '.tmp';
+    $out = fopen($tmpPath, 'w');
+    if (!$out) throw new RuntimeException("No se pudo escribir $tmpPath");
+    flock($out, LOCK_EX);
+    fputcsv($out, $header, ',', '"', '\\');
+    foreach ($keptRows as $row) {
+        fputcsv($out, $row, ',', '"', '\\');
+    }
+    flock($out, LOCK_UN);
+    fclose($out);
+    rename($tmpPath, $filePath);
+    return true;
+}

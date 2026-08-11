@@ -70,7 +70,16 @@ Invoke-RestMethod -WebSession $session -Uri "http://localhost:8000/api/queries" 
 # 5. Historial (GET /api/queries)
 Invoke-RestMethod -WebSession $session -Uri "http://localhost:8000/api/queries" -Method Get
 
-# 6. Logout
+# 6. Guardar como favorito (usa el id devuelto en el paso 4)
+Invoke-RestMethod -WebSession $session -Uri "http://localhost:8000/api/favorites" -Method Post -ContentType "application/json" -Body '{"query_id":1}'
+
+# 7. Ver favoritos
+Invoke-RestMethod -WebSession $session -Uri "http://localhost:8000/api/favorites" -Method Get
+
+# 8. Quitar un favorito (usa el id devuelto en el paso 6)
+Invoke-RestMethod -WebSession $session -Uri "http://localhost:8000/api/favorites/1" -Method Delete
+
+# 9. Logout
 Invoke-RestMethod -WebSession $session -Uri "http://localhost:8000/api/logout" -Method Post
 ```
 
@@ -98,7 +107,18 @@ curl -i -X POST http://localhost:8000/api/queries -b cookies.txt \
 # 5. Historial
 curl -i http://localhost:8000/api/queries -b cookies.txt
 
-# 6. Logout
+# 6. Guardar como favorito (usa el id devuelto en el paso 4)
+curl -i -X POST http://localhost:8000/api/favorites -b cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"query_id":1}'
+
+# 7. Ver favoritos
+curl -i http://localhost:8000/api/favorites -b cookies.txt
+
+# 8. Quitar un favorito (usa el id devuelto en el paso 6)
+curl -i -X DELETE http://localhost:8000/api/favorites/1 -b cookies.txt
+
+# 9. Logout
 curl -i -X POST http://localhost:8000/api/logout -b cookies.txt
 ```
 
@@ -113,3 +133,6 @@ curl -i -X POST http://localhost:8000/api/logout -b cookies.txt
 | POST | `/api/queries` | Sí | Genera grafo (proxy a MySQL Explain API) y lo guarda |
 | GET | `/api/queries` | Sí | Historial de consultas del usuario |
 | GET | `/api/queries/{id}` | Sí | Detalle de una consulta puntual |
+| POST | `/api/favorites` | Sí | Marca una consulta (`query_id`) como favorita |
+| GET | `/api/favorites` | Sí | Lista los favoritos del usuario, con los datos de la consulta |
+| DELETE | `/api/favorites/{id}` | Sí | Quita una consulta de favoritos |

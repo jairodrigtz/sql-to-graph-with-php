@@ -27,6 +27,7 @@ if (!is_dir(STORAGE_DIR)) {
 }
 define('USERS_CSV', STORAGE_DIR . '/users.csv');
 define('QUERIES_CSV', STORAGE_DIR . '/queries.csv');
+define('FAVORITES_CSV', STORAGE_DIR . '/favorites.csv');
 
 function get_json_body(): array {
     $data = json_decode(file_get_contents('php://input'), true);
