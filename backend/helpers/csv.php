@@ -72,3 +72,11 @@ function csv_delete_row(string $filePath, int $id): bool {
     rename($tmpPath, $filePath);
     return true;
 }
+
+function csv_escape_multiline(string $value): string {
+    return str_replace(["\r\n", "\r", "\n"], '\\n', $value);
+}
+
+function csv_restore_multiline(string $value): string {
+    return str_replace('\\n', "\n", $value);
+}

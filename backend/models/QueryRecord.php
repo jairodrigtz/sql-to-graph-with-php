@@ -7,7 +7,18 @@ class QueryRecord {
     public static function create(int $userId, string $query, string $version, string $explainJson, string $explainTree, string $graphUrl): array {
         $id = csv_next_id(QUERIES_CSV);
         $createdAt = date('c');
-        csv_append_row(QUERIES_CSV, [$id, $userId, $query, $version, $explainJson, $explainTree, $graphUrl, $createdAt], self::HEADER);
+
+        csv_append_row(QUERIES_CSV, [
+            $id,
+            $userId,
+            csv_escape_multiline($query),
+            $version,
+            csv_escape_multiline($explainJson),
+            csv_escape_multiline($explainTree),
+            $graphUrl,
+            $createdAt,
+        ], self::HEADER);
+
         return [
             'id' => $id,
             'user_id' => $userId,
@@ -26,7 +37,7 @@ class QueryRecord {
             fn($r) => (int)$r['user_id'] === $userId
         ));
         usort($rows, fn($a, $b) => strcmp($b['created_at'], $a['created_at']));
-        return $rows;
+        return array_map([self::class, 'hydrate'], $rows);
     }
 
     public static function findByIdAndUserId(int $id, int $userId): ?array {
@@ -34,5 +45,12 @@ class QueryRecord {
             if ((int)$row['id'] === $id) return $row;
         }
         return null;
+    }
+
+    private static function hydrate(array $row): array {
+        $row['query'] = csv_restore_multiline($row['query']);
+        $row['explain_json'] = csv_restore_multiline($row['explain_json']);
+        $row['explain_tree'] = csv_restore_multiline($row['explain_tree']);
+        return $row;
     }
 }
