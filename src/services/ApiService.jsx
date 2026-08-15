@@ -47,11 +47,26 @@ export const ApiService = () => {
           mensaje = "Error al procesar la consulta.";
         }
         if (errorData.details) {
-          const detailsStr = typeof errorData.details === "object"
-            ? JSON.stringify(errorData.details, null, 2)
-            : String(errorData.details);
-          mensaje += `\n\nDetalles: ${detailsStr}`;
+          let detailsText = "";
+          if (typeof errorData.details === "object" && errorData.details !== null) {
+            if (Array.isArray(errorData.details.errors)) {
+              detailsText = errorData.details.errors
+                .map((e) => e.message || e.error || String(e))
+                .join("\n");
+            } else if (errorData.details.message) {
+              detailsText = errorData.details.message;
+            } else {
+              detailsText = JSON.stringify(errorData.details, null, 2);
+            }
+          } else {
+            detailsText = String(errorData.details);
+          }
+
+          if (detailsText) {
+            mensaje += `\n\nDetalles: ${detailsText}`;
+          }
         }
+
         alert("Error en la consulta:\n" + mensaje);
       } else {
         alert("Error de conexión con el servidor backend.");
