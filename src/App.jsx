@@ -7,6 +7,7 @@ import Favorites from "./components/Favorites";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import { getMe, logout } from "./services/AuthService";
+import { getFavorites, addFavorite, removeFavorite } from "./services/FavoriteService";
 import "./index.css";
 import "./Spinner.css";
 
@@ -15,23 +16,18 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isLoginView, setIsLoginView] = useState(true);
 
+  const [favorites, setFavorites] = useState([]);
+  const [favoritesError, setFavoritesError] = useState(null);
+  const [selectedGraphUrl, setSelectedGraphUrl] = useState(null);
+
   const {
     query, setQuery,
     version, setVersion,
     explainJSON, setExplainJSON,
     explainTree, setExplainTree,
-    urlResult, handleSubmit,
+    urlResult, queryId, handleSubmit,
     loading, cleanForm
   } = ApiService();
-
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      const stored = localStorage.getItem("favorites");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -45,11 +41,26 @@ function App() {
       }
     };
     checkAuth();
+    localStorage.removeItem("favorites"); // los favoritos ahora viven en el backend
   }, []);
 
+  // recarga la lista de favoritos del usuario logueado
+  const loadFavorites = async () => {
+    try {
+      setFavorites(await getFavorites());
+      setFavoritesError(null);
+    } catch (err) {
+      setFavoritesError(err.message);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  }, [favorites]);
+    if (!user) {
+      setFavorites([]);
+      return;
+    }
+    loadFavorites();
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -58,20 +69,45 @@ function App() {
       console.error("Error al cerrar sesión:", err);
     } finally {
       setUser(null);
+      setSelectedGraphUrl(null);
     }
   };
 
-  const exists = favorites.some(
-    fav => JSON.stringify(fav.explainJSON) === JSON.stringify(explainJSON)
-  );
+  const exists = favorites.some(fav => Number(fav.query_id) === Number(queryId));
 
-  const addFavorite = () => {
-    if (!query || !urlResult || exists) return;
-    setFavorites([...favorites, { query, url: urlResult, explainJSON }]);
+  const handleAddFavorite = async () => {
+    if (!queryId || exists) return;
+    try {
+      await addFavorite(queryId);
+      await loadFavorites();
+    } catch (err) {
+      setFavoritesError(err.message);
+    }
   };
 
-  const removeFavorite = (index) => {
-    setFavorites(favorites.filter((_, i) => i !== index));
+  const handleRemoveFavorite = async (favoriteId) => {
+    try {
+      await removeFavorite(favoriteId);
+      if (favorites.some(fav => fav.id === favoriteId && fav.query?.graph_url === selectedGraphUrl)) {
+        setSelectedGraphUrl(null);
+      }
+      await loadFavorites();
+    } catch (err) {
+      setFavoritesError(err.message);
+    }
+  };
+
+  // se muestra el grafo del favorito elegido o, si no hay, el recién generado
+  const graphUrl = selectedGraphUrl || urlResult;
+
+  const handleGenerate = () => {
+    setSelectedGraphUrl(null);
+    handleSubmit();
+  };
+
+  const handleClean = () => {
+    setSelectedGraphUrl(null);
+    cleanForm();
   };
 
   if (authLoading) {
@@ -129,14 +165,14 @@ function App() {
           <div className="flex flex-row justify-center my-6 gap-4">
             <button
               className="bg-[#0c2041] text-white px-10 py-3 border rounded shadow-lg hover:bg-[#14356b] transition"
-              onClick={handleSubmit}
+              onClick={handleGenerate}
             >
               {loading ? "Cargando..." : "Generar Grafo"}
             </button>
             {urlResult && (
               <button
                 className="bg-[#0c2041] text-white px-10 py-3 border rounded shadow-lg hover:bg-[#14356b] transition"
-                onClick={cleanForm}
+                onClick={handleClean}
               >
                 Limpiar 🧹
               </button>
@@ -149,30 +185,39 @@ function App() {
             </div>
           )}
 
-          {urlResult && !loading && (
+          {graphUrl && !loading && (
             <div style={{ marginTop: 30 }}>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold">Resultado:</h4>
-                <button
-                  onClick={addFavorite}
-                  disabled={exists}
-                  className={`px-4 py-1 rounded transition ${
-                    exists
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-yellow-400 text-black hover:bg-yellow-500"
-                  }`}
-                >
-                  ⭐ Añadir a favoritos
-                </button>
+                <h4 className="font-semibold">
+                  {selectedGraphUrl ? "Grafo del favorito:" : "Resultado:"}
+                </h4>
+                {!selectedGraphUrl && (
+                  <button
+                    onClick={handleAddFavorite}
+                    disabled={exists}
+                    className={`px-4 py-1 rounded transition ${
+                      exists
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-yellow-400 text-black hover:bg-yellow-500"
+                    }`}
+                  >
+                    ⭐ {exists ? "Ya está en favoritos" : "Añadir a favoritos"}
+                  </button>
+                )}
               </div>
 
-              <Graph explainUrl={urlResult} />
+              <Graph explainUrl={graphUrl} />
             </div>
           )}
         </div>
 
         <div className="flex-1 basis-3/10">
-          <Favorites favorites={favorites} onRemove={removeFavorite} />
+          <Favorites
+            favorites={favorites}
+            error={favoritesError}
+            onSelect={(url) => setSelectedGraphUrl(url)}
+            onRemove={handleRemoveFavorite}
+          />
         </div>
       </div>
     </div>

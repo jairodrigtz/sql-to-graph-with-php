@@ -14,7 +14,7 @@ class Favorite {
         $id = csv_next_id(FAVORITES_CSV);
         $createdAt = date('c');
         csv_append_row(FAVORITES_CSV, [$id, $userId, $queryId, $createdAt], self::HEADER);
-        return ['id' => $id, 'userId' => $userId, 'queryId' => $queryId, 'createdAt' => $createdAt];
+        return ['id' => $id, 'user_id' => $userId, 'query_id' => $queryId, 'created_at' => $createdAt];
     }
 
     public static function listByUser(int $userId): array {

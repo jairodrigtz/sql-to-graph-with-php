@@ -1,54 +1,57 @@
 import React from "react";
 
-function Favorites({ favorites, onRemove }) {
-  if (favorites.length === 0) {
-    return (
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">⭐ Consultas y grafos favoritos</h2>
-        <p className="text-gray-500">No tienes favoritos aún.</p>
-      </div>
-    );
-  }
-
+function Favorites({ favorites, error, onSelect, onRemove }) {
   return (
-    <div className="mt-6 relative bg-[#FCF2E8] rounded-lg overflow-hidden shadow">
-      <h2 className="text-xl font-semibold mb-4">⭐ Consultas y grafos favoritos</h2>
-      <div className="overflow-x-auto">
-        <table className="border border-gray-300 text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border px-4 py-2 text-left">Consulta</th>
-              <th className="border px-4 py-2 text-left">Ver grafo</th>
-              <th className="border px-4 py-2 text-left">Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {favorites.map((fav, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="border px-4 py-2 whitespace-pre-wrap">{fav.query}</td>
-                <td className="border px-4 py-2">
-                  <a
-                    href={fav.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Abrir grafo ↗
-                  </a>
-                </td>
-                <td className="border px-4 py-2">
-                  <button
-                    onClick={() => onRemove(idx)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                  >
-                    Quitar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="mt-6">
+      <h2 className="text-xl font-semibold mb-2">⭐ Consultas y grafos favoritos</h2>
+
+      {error && (
+        <p className="mb-2 text-sm text-red-600">{error}</p>
+      )}
+
+      {favorites.length === 0 ? (
+        <p className="text-gray-500">No tienes favoritos aún.</p>
+      ) : (
+        <div className="relative bg-[#FCF2E8] rounded-lg overflow-hidden shadow">
+          <div className="overflow-x-auto">
+            <table className="w-full border border-gray-300 text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border px-4 py-2 text-left">Consulta</th>
+                  <th className="border px-4 py-2 text-left">Ver grafo</th>
+                  <th className="border px-4 py-2 text-left">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {favorites.map((fav) => (
+                  <tr key={fav.id} className="hover:bg-gray-50">
+                    <td className="border px-4 py-2 whitespace-pre-wrap">
+                      {fav.query ? fav.query.query : "Consulta no disponible"}
+                    </td>
+                    <td className="border px-4 py-2 whitespace-nowrap">
+                      <button
+                        onClick={() => onSelect(fav.query.graph_url)}
+                        disabled={!fav.query}
+                        className="text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
+                      >
+                        Ver grafo
+                      </button>
+                    </td>
+                    <td className="border px-4 py-2">
+                      <button
+                        onClick={() => onRemove(fav.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                      >
+                        Quitar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

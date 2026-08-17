@@ -8,6 +8,7 @@ export const ApiService = () => {
   const [explainJSON, setExplainJSON] = useState("");
   const [explainTree, setExplainTree] = useState("");
   const [urlResult, setUrlResult] = useState(null);
+  const [queryId, setQueryId] = useState(null); // id que devuelve el backend, necesario para favoritos
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -33,7 +34,7 @@ export const ApiService = () => {
 
       if (res.data && res.data.result && res.data.result.graph_url) {
         setUrlResult(res.data.result.graph_url);
-        console.log(res.data.result.graph_url);
+        setQueryId(res.data.result.id);
       }
     } catch (error) {
       if (error.response && error.response.data) {
@@ -81,6 +82,7 @@ export const ApiService = () => {
     setExplainJSON("");
     setExplainTree("");
     setUrlResult(null);
+    setQueryId(null);
   };
 
   return {
@@ -89,6 +91,7 @@ export const ApiService = () => {
     explainJSON, setExplainJSON,
     explainTree, setExplainTree,
     urlResult, setUrlResult,
+    queryId, setQueryId,
     loading, setLoading,
     handleSubmit,
     cleanForm
