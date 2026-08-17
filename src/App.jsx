@@ -4,10 +4,12 @@ import { ApiService } from "./services/ApiService";
 import NavBar from "./components/NavBar";
 import Inputs from "./components/Inputs";
 import Favorites from "./components/Favorites";
+import History from "./components/History";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import { getMe, logout } from "./services/AuthService";
 import { getFavorites, addFavorite, removeFavorite } from "./services/FavoriteService";
+import { getQueries, getQuery } from "./services/QueryService";
 import "./index.css";
 import "./Spinner.css";
 
@@ -19,13 +21,19 @@ function App() {
   const [favorites, setFavorites] = useState([]);
   const [favoritesError, setFavoritesError] = useState(null);
   const [selectedGraphUrl, setSelectedGraphUrl] = useState(null);
+  const [selectedGraphSource, setSelectedGraphSource] = useState(null);
+
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  const [sidebarView, setSidebarView] = useState("favorites");
 
   const {
     query, setQuery,
     version, setVersion,
     explainJSON, setExplainJSON,
     explainTree, setExplainTree,
-    urlResult, queryId, handleSubmit,
+    urlResult, queryId, setQueryId, handleSubmit,
     loading, cleanForm
   } = ApiService();
 
@@ -54,12 +62,26 @@ function App() {
     }
   };
 
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      setHistory(await getQueries());
+      setHistoryError(null);
+    } catch (err) {
+      setHistoryError(err.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       setFavorites([]);
+      setHistory([]);
       return;
     }
     loadFavorites();
+    loadHistory();
   }, [user]);
 
   const handleLogout = async () => {
@@ -70,6 +92,8 @@ function App() {
     } finally {
       setUser(null);
       setSelectedGraphUrl(null);
+      setSelectedGraphSource(null);
+      setHistory([]);
     }
   };
 
@@ -90,6 +114,7 @@ function App() {
       await removeFavorite(favoriteId);
       if (favorites.some(fav => fav.id === favoriteId && fav.query?.graph_url === selectedGraphUrl)) {
         setSelectedGraphUrl(null);
+        setSelectedGraphSource(null);
       }
       await loadFavorites();
     } catch (err) {
@@ -100,14 +125,43 @@ function App() {
   // se muestra el grafo del favorito elegido o, si no hay, el recién generado
   const graphUrl = selectedGraphUrl || urlResult;
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setSelectedGraphUrl(null);
-    handleSubmit();
+    setSelectedGraphSource(null);
+    const createdQuery = await handleSubmit();
+    if (createdQuery) {
+      await loadHistory();
+      setSidebarView("history");
+    }
   };
 
   const handleClean = () => {
     setSelectedGraphUrl(null);
+    setSelectedGraphSource(null);
     cleanForm();
+  };
+
+  const handleSelectFavorite = (url) => {
+    setSelectedGraphUrl(url);
+    setSelectedGraphSource("favorite");
+  };
+
+  const handleSelectHistory = async (id) => {
+    try {
+      const savedQuery = await getQuery(id);
+      if (!savedQuery) return;
+
+      setQuery(savedQuery.query || "");
+      setVersion(savedQuery.version || "8.0.32");
+      setExplainJSON(savedQuery.explain_json || "");
+      setExplainTree(savedQuery.explain_tree || "");
+      setQueryId(savedQuery.id);
+      setSelectedGraphUrl(savedQuery.graph_url || null);
+      setSelectedGraphSource("history");
+      setHistoryError(null);
+    } catch (err) {
+      setHistoryError(err.message);
+    }
   };
 
   if (authLoading) {
@@ -189,7 +243,11 @@ function App() {
             <div style={{ marginTop: 30 }}>
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold">
-                  {selectedGraphUrl ? "Grafo del favorito:" : "Resultado:"}
+                  {selectedGraphSource === "favorite"
+                    ? "Grafo del favorito:"
+                    : selectedGraphSource === "history"
+                      ? "Grafo del historial:"
+                      : "Resultado:"}
                 </h4>
                 {!selectedGraphUrl && (
                   <button
@@ -212,12 +270,47 @@ function App() {
         </div>
 
         <div className="flex-1 basis-3/10">
-          <Favorites
-            favorites={favorites}
-            error={favoritesError}
-            onSelect={(url) => setSelectedGraphUrl(url)}
-            onRemove={handleRemoveFavorite}
-          />
+          <div className="flex gap-2 mt-6">
+            <button
+              type="button"
+              onClick={() => setSidebarView("favorites")}
+              className={`px-4 py-2 rounded transition ${
+                sidebarView === "favorites"
+                  ? "bg-[#0c2041] text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              Favoritos
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarView("history")}
+              className={`px-4 py-2 rounded transition ${
+                sidebarView === "history"
+                  ? "bg-[#0c2041] text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              Historial
+            </button>
+          </div>
+
+          {sidebarView === "favorites" ? (
+            <Favorites
+              favorites={favorites}
+              error={favoritesError}
+              onSelect={handleSelectFavorite}
+              onRemove={handleRemoveFavorite}
+            />
+          ) : (
+            <History
+              queries={history}
+              loading={historyLoading}
+              error={historyError}
+              onSelect={handleSelectHistory}
+              onRefresh={loadHistory}
+            />
+          )}
         </div>
       </div>
     </div>

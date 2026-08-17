@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { register } from "../services/AuthService";
+import { login, register } from "../services/AuthService";
 
 const Register = ({ onRegisterSuccess, onSwitchToLogin }) => {
   const [name, setName] = useState("");
@@ -24,9 +24,10 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin }) => {
 
     setLoading(true);
     try {
-      const data = await register(name, email, password);
-      if (data.user) {
-        onRegisterSuccess(data.user);
+      await register(name, email, password);
+      const loginData = await login(email, password);
+      if (loginData.user) {
+        onRegisterSuccess(loginData.user);
       }
     } catch (err) {
       setError(err.message || "Error al registrar usuario.");

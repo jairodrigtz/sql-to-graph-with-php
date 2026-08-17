@@ -14,7 +14,7 @@ export const ApiService = () => {
   const handleSubmit = async () => {
     if (!query.trim() || !explainJSON.trim()) {
       alert("Debes ingresar tanto el query como el EXPLAIN FORMAT=JSON (como string).\nEstos campos son obligatorios.");
-      return;
+      return null;
     }
     setLoading(true);
 
@@ -35,7 +35,9 @@ export const ApiService = () => {
       if (res.data && res.data.result && res.data.result.graph_url) {
         setUrlResult(res.data.result.graph_url);
         setQueryId(res.data.result.id);
+        return res.data.result;
       }
+      return null;
     } catch (error) {
       if (error.response && error.response.data) {
         const errorData = error.response.data;
@@ -72,6 +74,7 @@ export const ApiService = () => {
       } else {
         alert("Error de conexión con el servidor backend.");
       }
+      return null;
     } finally {
       setLoading(false);
     }
