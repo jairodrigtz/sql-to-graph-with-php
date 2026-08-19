@@ -160,20 +160,3 @@ Crea una colección con los mismos requests — Postman guarda las cookies de se
 | POST | `/api/favorites` | Sí | Marca una consulta (`query_id`) como favorita |
 | GET | `/api/favorites` | Sí | Lista los favoritos del usuario |
 | DELETE | `/api/favorites/{id}` | Sí | Quita una consulta de favoritos |
-
-## Estructura del proyecto
-
-```
-proyecto/
-├── src/                  # Frontend React
-├── public/
-├── backend/
-│   ├── index.php         # Router / front controller
-│   ├── config.php        # CORS, sesiones, storage
-│   ├── controllers/
-│   ├── models/
-│   ├── helpers/
-│   └── storage/          # users.csv, queries.csv, favorites.csv (se generan solos)
-├── package.json
-└── vite.config.js
-```

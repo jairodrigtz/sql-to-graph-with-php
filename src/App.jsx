@@ -49,7 +49,7 @@ function App() {
       }
     };
     checkAuth();
-    localStorage.removeItem("favorites"); // los favoritos ahora viven en el backend
+    
   }, []);
 
   // recarga la lista de favoritos del usuario logueado
